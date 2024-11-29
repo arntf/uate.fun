@@ -1,358 +1,198 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>YouTube.com Clone</title>
+<head>
+  <title>Basic Pong HTML Game</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  body {
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  </style>
+</head>
+<body>
+<canvas width="750" height="585" id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const context = canvas.getContext('2d');
+const grid = 15;
+const paddleHeight = grid * 5; // 80
+const maxPaddleY = canvas.height - grid - paddleHeight;
 
-    <link rel="stylesheet" href="styles/general.css">
-    <link rel="stylesheet" href="styles/header.css">
-    <link rel="stylesheet" href="styles/video.css">
-    <link rel="stylesheet" href="styles/sidebar.css">
-  </head>
-  <body>
-    <header class="header">
-      <div class="left-section">
-        <img class="hamburger-menu" src="icons/hamburger-menu.svg">
-        <img class="youtube-logo" src="icons/youtube-logo.svg">
-      </div>
-      <div class="middle-section">
-        <input class="search-bar" type="text" placeholder="Search">
-        <button class="search-button">
-          <img class="search-icon" src="icons/search.svg">
-          <div class="tooltip">Search</div>
-        </button>
-        <!-- Put position absolute inside position relative -->
-        <button class="voice-search-button">
-          <img class="voice-search-icon" src="icons/voice-search-icon.svg">
-          <div class="tooltip">Search with your voice</div>
-        </button>
-      </div>
-      <div class="right-section">
-        <div class="upload-icon-container">
-          <img class="upload-icon" src="icons/upload.svg">
-          <div class="tooltip">Create</div>
-        </div>
-        <div class="youtube-apps-icon-container">
-          <img class="youtube-apps-icon" src="icons/youtube-apps.svg">
-          <div class="tooltip">YouTube Apps</div>
-        </div>
-        <div class="notifications-icon-container">
-          <img class="notifications-icon" src="icons/notifications.svg">
-          <div class="notifications-count">3</div>
-          <div class="tooltip">Notifications</div>
-        </div>
-        <img class="current-user-picture" src="channel-pictures/my-channel.jpeg">
-      </div>
-    </header>
+var paddleSpeed = 6;
+var ballSpeed = 5;
 
-    <nav class="sidebar">
-      <div class="sidebar-link">
-        <img src="icons/home.svg">
-        <div>Home</div>
-      </div>
-      <div class="sidebar-link">
-        <img src="icons/explore.svg">
-        <div>Explore</div>
-      </div>
-      <div class="sidebar-link">
-        <img src="icons/subscriptions.svg">
-        <div>Subscriptions</div>
-      </div>
-      <div class="sidebar-link">
-        <img src="icons/originals.svg">
-        <div>Originals</div>
-      </div>
-      <div class="sidebar-link">
-        <img src="icons/youtube-music.svg">
-        <div>YouTube Music</div>
-      </div>
-      <div class="sidebar-link">
-        <img src="icons/library.svg">
-        <div>Library</div>
-      </div>
-    </nav>
+const leftPaddle = {
+  // start in the middle of the game on the left side
+  x: grid * 2,
+  y: canvas.height / 2 - paddleHeight / 2,
+  width: grid,
+  height: paddleHeight,
 
-    <main>
-      <section class="video-grid">
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-1.webp">
-            <div class="video-time">14:20</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-1.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Talking Tech and AI with Google CEO Sundar Pichai!
-              </p>
-              <p class="video-author">
-                Marques Brownlee
-              </p>
-              <p class="video-stats">
-                3.4M views &#183; 6 months ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // paddle velocity
+  dy: 0
+};
+const rightPaddle = {
+  // start in the middle of the game on the right side
+  x: canvas.width - grid * 3,
+  y: canvas.height / 2 - paddleHeight / 2,
+  width: grid,
+  height: paddleHeight,
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-2.webp">
-            <div class="video-time">8:22</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-2.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Try Not To Laugh Challenge #9
-              </p>
-              <p class="video-author">
-                Markiplier
-              </p>
-              <p class="video-stats">
-                19M views &#183; 4 years ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // paddle velocity
+  dy: 0
+};
+const ball = {
+  // start in the middle of the game
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  width: grid,
+  height: grid,
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-3.webp">
-            <div class="video-time">9:13</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-3.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Crazy Tik Toks Taken Moments Before DISASTER
-              </p>
-              <p class="video-author">
-                SSSniperWolf
-              </p>
-              <p class="video-stats">
-                12M views &#183; 1 year ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // keep track of when need to reset the ball position
+  resetting: false,
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-4.webp">
-            <div class="video-time">22:09</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-4.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                The Simplest Math Problem No One Can Solve - Collatz Conjecture
-              </p>
-              <p class="video-author">
-                Veritasium
-              </p>
-              <p class="video-stats">
-                18M views &#183; 4 months ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // ball velocity (start going to the top-right corner)
+  dx: ballSpeed,
+  dy: -ballSpeed
+};
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-5.webp">
-            <div class="video-time">11:17</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-5.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Kadane's Algorithm to Maximum Sum Subarray Problem
-              </p>
-              <p class="video-author">
-                CS Dojo
-              </p>
-              <p class="video-stats">
-                519K views &#183; 5 years ago
-              </p>
-            </div>
-          </div>
-        </div>
+// check for collision between two objects using axis-aligned bounding box (AABB)
+// @see https://developer.mozilla.org/en-US/docs/Games/Techniques/2D_collision_detection
+function collides(obj1, obj2) {
+  return obj1.x < obj2.x + obj2.width &&
+         obj1.x + obj1.width > obj2.x &&
+         obj1.y < obj2.y + obj2.height &&
+         obj1.y + obj1.height > obj2.y;
+}
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-6.webp">
-            <div class="video-time">19:59</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-6.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Anything You Can Fit In The Circle I’ll Pay For
-              </p>
-              <p class="video-author">
-                MrBeast
-              </p>
-              <p class="video-stats">
-                141M views &#183; 1 year ago
-              </p>
-            </div>
-          </div>
-        </div>
+// game loop
+function loop() {
+  requestAnimationFrame(loop);
+  context.clearRect(0,0,canvas.width,canvas.height);
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-7.webp">
-            <div class="video-time">10:13</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-7.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Why Planes Don't Fly Over Tibet
-              </p>
-              <p class="video-author">
-                RealLifeLore
-              </p>
-              <p class="video-stats">
-                6.6M views &#183; 1 year ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // move paddles by their velocity
+  leftPaddle.y += leftPaddle.dy;
+  rightPaddle.y += rightPaddle.dy;
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-8.webp">
-            <div class="video-time">7:12</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-8.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Inside The World's Biggest Passenger Plane
-              </p>
-              <p class="video-author">
-                Tech Vision
-              </p>
-              <p class="video-stats">
-                3.7M views &#183; 10 months ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // prevent paddles from going through walls
+  if (leftPaddle.y < grid) {
+    leftPaddle.y = grid;
+  }
+  else if (leftPaddle.y > maxPaddleY) {
+    leftPaddle.y = maxPaddleY;
+  }
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-9.webp">
-            <div class="video-time">13:17</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-9.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                The SECRET to Super Human STRENGTH
-              </p>
-              <p class="video-author">
-                ThenX
-              </p>
-              <p class="video-stats">
-                20M views &#183; 3 years ago
-              </p>
-            </div>
-          </div>
-        </div>
+  if (rightPaddle.y < grid) {
+    rightPaddle.y = grid;
+  }
+  else if (rightPaddle.y > maxPaddleY) {
+    rightPaddle.y = maxPaddleY;
+  }
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-10.webp">
-            <div class="video-time">7:53</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-10.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                How The World's Largest Cruise Ship Makes 30,000 Meals Every Day
-              </p>
-              <p class="video-author">
-                Business Insider
-              </p>
-              <p class="video-stats">
-                14M views &#183; 1 year ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // draw paddles
+  context.fillStyle = 'white';
+  context.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
+  context.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-11.webp">
-            <div class="video-time">4:10</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-11.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                Dubai's Crazy Underwater Train and Other Things #Only in Dubai
-              </p>
-              <p class="video-author">
-                Destination Tips
-              </p>
-              <p class="video-stats">
-                3M views &#183; 1 year ago
-              </p>
-            </div>
-          </div>
-        </div>
+  // move ball by its velocity
+  ball.x += ball.dx;
+  ball.y += ball.dy;
 
-        <div class="video-preview">
-          <div class="thumbnail-row">
-            <img class="thumbnail" src="thumbnails/thumbnail-12.webp">
-            <div class="video-time">4:51</div>
-          </div>
-          <div class="video-info-grid">
-            <div class="channel-picture">
-              <img class="profile-picture" src="channel-pictures/channel-12.jpeg">
-            </div>
-            <div class="video-info">
-              <p class="video-title">
-                What would happen if you didn’t drink water? - Mia Nacamulli
-              </p>
-              <p class="video-author">
-                TED-Ed
-              </p>
-              <p class="video-stats">
-                12M views &#183; 5 years ago
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </body>
+  // prevent ball from going through walls by changing its velocity
+  if (ball.y < grid) {
+    ball.y = grid;
+    ball.dy *= -1;
+  }
+  else if (ball.y + grid > canvas.height - grid) {
+    ball.y = canvas.height - grid * 2;
+    ball.dy *= -1;
+  }
+
+  // reset ball if it goes past paddle (but only if we haven't already done so)
+  if ( (ball.x < 0 || ball.x > canvas.width) && !ball.resetting) {
+    ball.resetting = true;
+
+    // give some time for the player to recover before launching the ball again
+    setTimeout(() => {
+      ball.resetting = false;
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+    }, 400);
+  }
+
+  // check to see if ball collides with paddle. if they do change x velocity
+  if (collides(ball, leftPaddle)) {
+    ball.dx *= -1;
+
+    // move ball next to the paddle otherwise the collision will happen again
+    // in the next frame
+    ball.x = leftPaddle.x + leftPaddle.width;
+  }
+  else if (collides(ball, rightPaddle)) {
+    ball.dx *= -1;
+
+    // move ball next to the paddle otherwise the collision will happen again
+    // in the next frame
+    ball.x = rightPaddle.x - ball.width;
+  }
+
+  // draw ball
+  context.fillRect(ball.x, ball.y, ball.width, ball.height);
+
+  // draw walls
+  context.fillStyle = 'lightgrey';
+  context.fillRect(0, 0, canvas.width, grid);
+  context.fillRect(0, canvas.height - grid, canvas.width, canvas.height);
+
+  // draw dotted line down the middle
+  for (let i = grid; i < canvas.height - grid; i += grid * 2) {
+    context.fillRect(canvas.width / 2 - grid / 2, i, grid, grid);
+  }
+}
+
+// listen to keyboard events to move the paddles
+document.addEventListener('keydown', function(e) {
+
+  // up arrow key
+  if (e.which === 38) {
+    rightPaddle.dy = -paddleSpeed;
+  }
+  // down arrow key
+  else if (e.which === 40) {
+    rightPaddle.dy = paddleSpeed;
+  }
+
+  // w key
+  if (e.which === 87) {
+    leftPaddle.dy = -paddleSpeed;
+  }
+  // a key
+  else if (e.which === 83) {
+    leftPaddle.dy = paddleSpeed;
+  }
+});
+
+// listen to keyboard events to stop the paddle if key is released
+document.addEventListener('keyup', function(e) {
+  if (e.which === 38 || e.which === 40) {
+    rightPaddle.dy = 0;
+  }
+
+  if (e.which === 83 || e.which === 87) {
+    leftPaddle.dy = 0;
+  }
+});
+
+// start the game
+requestAnimationFrame(loop);
+</script>
+</body>
 </html>
