@@ -7,6 +7,7 @@
   html, body {
     height: 100%;
     margin: 0;
+    overflow: hidden; /* Prevent scrolling */
   }
 
   body {
@@ -204,9 +205,33 @@ document.addEventListener('keyup', function(e) {
   }
 });
 
+// listen to touch events to move the paddles
+canvas.addEventListener('touchstart', function(e) {
+  const touchY = e.touches[0].clientY;
+  if (touchY < window.innerHeight / 2) {
+    leftPaddle.dy = -paddleSpeed;
+  } else {
+    leftPaddle.dy = paddleSpeed;
+  }
+});
+
+canvas.addEventListener('touchend', function(e) {
+  leftPaddle.dy = 0;
+});
+
+canvas.addEventListener('touchmove', function(e) {
+  const touchY = e.touches[0].clientY;
+  if (touchY < window.innerHeight / 2) {
+    rightPaddle.dy = -paddleSpeed;
+  } else {
+    rightPaddle.dy = paddleSpeed;
+  }
+});
 
 // start the game
 requestAnimationFrame(loop);
 </script>
 </body>
 </html>
+
+
