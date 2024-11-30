@@ -1,29 +1,12 @@
-// Date: 11/30/2024
-// Author: arntf
-// Co-Author: Chat GPT
-
-// This version made below changes based on <https://github.com/arntf/uate.fun/blob/main/index_retired_no_scrolling.html>
-//Center the game canvas in the middle of the screen on iOS browsers:
-
-// 1. Center the game canvas in the middle of the screen on iOS browsers:
-// We can adjust the CSS and JavaScript to ensure the canvas stays properly centered regardless of the browser or device.
-
-// 2. Prevent scrolling when interacting with the game:
-// We'll use event.preventDefault() and event.stopPropagation() in the touch event handlers to disable default browser behaviors like scrolling when interacting with the game.
-
-// I will keep upgrrade this index, and leave a notes at the bottom of the notes.
-  
 <!DOCTYPE html>
 <html>
 <head>
   <title>Basic Pong HTML Game</title>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
   html, body {
     height: 100%;
     margin: 0;
-    overflow: hidden; /* Prevent scrolling on the page */
   }
 
   body {
@@ -33,88 +16,69 @@
     justify-content: center;
   }
 
+  .game-container {
+    width: 100%;
+    max-width: 750px;
+    aspect-ratio: 750 / 585;
+  }
+
   canvas {
-    margin: 0 auto; /* Center horizontally */
-    display: block;
+    width: 100%;
+    height: 100%;
   }
   </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<div class="game-container">
+  <canvas width="750" height="585" id="game"></canvas>
+</div>
 <script>
 const canvas = document.getElementById('game');
 const context = canvas.getContext('2d');
+const grid = 15;
+const paddleHeight = grid * 5; // 80
+const maxPaddleY = canvas.height - grid - paddleHeight;
 
-// Set canvas size dynamically based on the window size, maintaining a 4:3 ratio
-function resizeCanvas() {
-  const aspectRatio = 4 / 3;
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-
-  if (width / height > aspectRatio) {
-    canvas.height = height;
-    canvas.width = height * aspectRatio;
-  } else {
-    canvas.width = width;
-    canvas.height = width / aspectRatio;
-  }
-
-  grid = canvas.width / 50;
-  paddleHeight = grid * 5;
-  maxPaddleY = canvas.height - grid - paddleHeight;
-
-  resetGameElements();
-}
-
-window.addEventListener('resize', resizeCanvas);
-
-// Variables and settings
-let grid = canvas.width / 50;
-let paddleHeight = grid * 5; 
-let maxPaddleY = canvas.height - grid - paddleHeight;
-
-const paddleSpeed = 6;
-const ballSpeed = 5;
+var paddleSpeed = 6;
+var ballSpeed = 5;
 
 const leftPaddle = {
+  // start in the middle of the game on the left side
   x: grid * 2,
   y: canvas.height / 2 - paddleHeight / 2,
   width: grid,
   height: paddleHeight,
+
+  // paddle velocity
   dy: 0
 };
-
 const rightPaddle = {
+  // start in the middle of the game on the right side
   x: canvas.width - grid * 3,
   y: canvas.height / 2 - paddleHeight / 2,
   width: grid,
   height: paddleHeight,
+
+  // paddle velocity
   dy: 0
 };
-
 const ball = {
+  // start in the middle of the game
   x: canvas.width / 2,
   y: canvas.height / 2,
   width: grid,
   height: grid,
+
+  // keep track of when need to reset the ball position
   resetting: false,
+
+  // ball velocity (start going to the top-right corner)
   dx: ballSpeed,
   dy: -ballSpeed
 };
 
-// Reset positions
-function resetGameElements() {
-  leftPaddle.x = grid * 2;
-  leftPaddle.y = canvas.height / 2 - paddleHeight / 2;
-
-  rightPaddle.x = canvas.width - grid * 3;
-  rightPaddle.y = canvas.height / 2 - paddleHeight / 2;
-
-  ball.x = canvas.width / 2;
-  ball.y = canvas.height / 2;
-}
-
-// Check collision
+// check for collision between two objects using axis-aligned bounding box (AABB)
+// @see https://developer.mozilla.org/en-US/docs/Games/Techniques/2D_collision_detection
 function collides(obj1, obj2) {
   return obj1.x < obj2.x + obj2.width &&
          obj1.x + obj1.width > obj2.x &&
@@ -122,110 +86,127 @@ function collides(obj1, obj2) {
          obj1.y + obj1.height > obj2.y;
 }
 
-// Game loop
+// game loop
 function loop() {
   requestAnimationFrame(loop);
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.clearRect(0,0,canvas.width,canvas.height);
 
-  // Move paddles
+  // move paddles by their velocity
   leftPaddle.y += leftPaddle.dy;
   rightPaddle.y += rightPaddle.dy;
 
-  // Prevent paddles from going out of bounds
-  leftPaddle.y = Math.max(grid, Math.min(leftPaddle.y, maxPaddleY));
-  rightPaddle.y = Math.max(grid, Math.min(rightPaddle.y, maxPaddleY));
+  // prevent paddles from going through walls
+  if (leftPaddle.y < grid) {
+    leftPaddle.y = grid;
+  }
+  else if (leftPaddle.y > maxPaddleY) {
+    leftPaddle.y = maxPaddleY;
+  }
 
-  // Draw paddles
+  if (rightPaddle.y < grid) {
+    rightPaddle.y = grid;
+  }
+  else if (rightPaddle.y > maxPaddleY) {
+    rightPaddle.y = maxPaddleY;
+  }
+
+  // draw paddles
   context.fillStyle = 'white';
   context.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
   context.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
 
-  // Move ball
+  // move ball by its velocity
   ball.x += ball.dx;
   ball.y += ball.dy;
 
-  // Ball-wall collision
-  if (ball.y < grid || ball.y + grid > canvas.height - grid) {
+  // prevent ball from going through walls by changing its velocity
+  if (ball.y < grid) {
+    ball.y = grid;
+    ball.dy *= -1;
+  }
+  else if (ball.y + grid > canvas.height - grid) {
+    ball.y = canvas.height - grid * 2;
     ball.dy *= -1;
   }
 
-  // Ball reset
-  if ((ball.x < 0 || ball.x > canvas.width) && !ball.resetting) {
+  // reset ball if it goes past paddle (but only if we haven't already done so)
+  if ( (ball.x < 0 || ball.x > canvas.width) && !ball.resetting) {
     ball.resetting = true;
+
+    // give some time for the player to recover before launching the ball again
     setTimeout(() => {
       ball.resetting = false;
       ball.x = canvas.width / 2;
       ball.y = canvas.height / 2;
-      ball.dx = ballSpeed * (Math.random() > 0.5 ? 1 : -1);
-      ball.dy = ballSpeed * (Math.random() > 0.5 ? 1 : -1);
     }, 400);
   }
 
-  // Ball-paddle collision
+  // check to see if ball collides with paddle. if they do change x velocity
   if (collides(ball, leftPaddle)) {
     ball.dx *= -1;
+
+    // move ball next to the paddle otherwise the collision will happen again
+    // in the next frame
     ball.x = leftPaddle.x + leftPaddle.width;
-  } else if (collides(ball, rightPaddle)) {
+  }
+  else if (collides(ball, rightPaddle)) {
     ball.dx *= -1;
+
+    // move ball next to the paddle otherwise the collision will happen again
+    // in the next frame
     ball.x = rightPaddle.x - ball.width;
   }
 
-  // Draw ball
+  // draw ball
   context.fillRect(ball.x, ball.y, ball.width, ball.height);
 
-  // Draw walls
+  // draw walls
   context.fillStyle = 'lightgrey';
   context.fillRect(0, 0, canvas.width, grid);
   context.fillRect(0, canvas.height - grid, canvas.width, canvas.height);
 
-  // Draw middle line
+  // draw dotted line down the middle
   for (let i = grid; i < canvas.height - grid; i += grid * 2) {
     context.fillRect(canvas.width / 2 - grid / 2, i, grid, grid);
   }
 }
 
-// Keyboard events
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowUp') rightPaddle.dy = -paddleSpeed;
-  if (e.key === 'ArrowDown') rightPaddle.dy = paddleSpeed;
-  if (e.key === 'w') leftPaddle.dy = -paddleSpeed;
-  if (e.key === 's') leftPaddle.dy = paddleSpeed;
+// listen to keyboard events to move the paddles
+document.addEventListener('keydown', function(e) {
+
+  // up arrow key
+  if (e.which === 38) {
+    rightPaddle.dy = -paddleSpeed;
+  }
+  // down arrow key
+  else if (e.which === 40) {
+    rightPaddle.dy = paddleSpeed;
+  }
+
+  // w key
+  if (e.which === 87) {
+    leftPaddle.dy = -paddleSpeed;
+  }
+  // a key
+  else if (e.which === 83) {
+    leftPaddle.dy = paddleSpeed;
+  }
 });
 
-document.addEventListener('keyup', (e) => {
-  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') rightPaddle.dy = 0;
-  if (e.key === 'w' || e.key === 's') leftPaddle.dy = 0;
+// listen to keyboard events to stop the paddle if key is released
+document.addEventListener('keyup', function(e) {
+  if (e.which === 38 || e.which === 40) {
+    rightPaddle.dy = 0;
+  }
+
+  if (e.which === 83 || e.which === 87) {
+    leftPaddle.dy = 0;
+  }
 });
 
-// Touch events
-canvas.addEventListener('touchstart', (event) => {
-  event.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  Array.from(event.touches).forEach((touch) => {
-    const touchX = touch.clientX - rect.left;
-    const touchY = touch.clientY - rect.top;
-    if (touchX < canvas.width / 2) leftPaddle.y = touchY - paddleHeight / 2;
-    if (touchX >= canvas.width / 2) rightPaddle.y = touchY - paddleHeight / 2;
-  });
-});
 
-canvas.addEventListener('touchmove', (event) => {
-  event.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  Array.from(event.touches).forEach((touch) => {
-    const touchX = touch.clientX - rect.left;
-    const touchY = touch.clientY - rect.top;
-    if (touchX < canvas.width / 2) leftPaddle.y = touchY - paddleHeight / 2;
-    if (touchX >= canvas.width / 2) rightPaddle.y = touchY - paddleHeight / 2;
-  });
-});
-
-// Start game loop and set up canvas
-resizeCanvas();
-loop();
+// start the game
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
-
-
-// 11/30/2024 add " margin: 0 auto; /* Center horizaontally */ "
