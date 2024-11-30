@@ -1,0 +1,180 @@
+// Date:11/30/2024
+// Author: arntf
+// Co-Author: Copilot
+// Reason: <https://github.com/arntf/uate.fun/blob/main/no_touch_index.html> can not be played on touch screens. 
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Basic Pong HTML Game</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  </style>
+</head>
+<body>
+<canvas width="750" height="585" id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const context = canvas.getContext('2d');
+const grid = 15;
+const paddleHeight = grid * 5; // 80
+const maxPaddleY = canvas.height - grid - paddleHeight;
+
+const paddleSpeed = 6;
+const ballSpeed = 5;
+
+const leftPaddle = {
+  x: grid * 2,
+  y: canvas.height / 2 - paddleHeight / 2,
+  width: grid,
+  height: paddleHeight,
+  dy: 0
+};
+
+const rightPaddle = {
+  x: canvas.width - grid * 3,
+  y: canvas.height / 2 - paddleHeight / 2,
+  width: grid,
+  height: paddleHeight,
+  dy: 0
+};
+
+const ball = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  width: grid,
+  height: grid,
+  resetting: false,
+  dx: ballSpeed,
+  dy: -ballSpeed
+};
+
+// Check collision
+function collides(obj1, obj2) {
+  return obj1.x < obj2.x + obj2.width &&
+         obj1.x + obj1.width > obj2.x &&
+         obj1.y < obj2.y + obj2.height &&
+         obj1.y + obj1.height > obj2.y;
+}
+
+// Game loop
+function loop() {
+  requestAnimationFrame(loop);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Move paddles
+  leftPaddle.y += leftPaddle.dy;
+  rightPaddle.y += rightPaddle.dy;
+
+  // Prevent paddles from going out of bounds
+  leftPaddle.y = Math.max(grid, Math.min(leftPaddle.y, maxPaddleY));
+  rightPaddle.y = Math.max(grid, Math.min(rightPaddle.y, maxPaddleY));
+
+  // Draw paddles
+  context.fillStyle = 'white';
+  context.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
+  context.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
+
+  // Move ball
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+
+  // Ball-wall collision
+  if (ball.y < grid || ball.y + grid > canvas.height - grid) {
+    ball.dy *= -1;
+  }
+
+  // Ball reset
+  if ((ball.x < 0 || ball.x > canvas.width) && !ball.resetting) {
+    ball.resetting = true;
+    setTimeout(() => {
+      ball.resetting = false;
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.dx = ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+      ball.dy = ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+    }, 400);
+  }
+
+  // Ball-paddle collision
+  if (collides(ball, leftPaddle)) {
+    ball.dx *= -1;
+    ball.x = leftPaddle.x + leftPaddle.width;
+  } else if (collides(ball, rightPaddle)) {
+    ball.dx *= -1;
+    ball.x = rightPaddle.x - ball.width;
+  }
+
+  // Draw ball
+  context.fillRect(ball.x, ball.y, ball.width, ball.height);
+
+  // Draw walls
+  context.fillStyle = 'lightgrey';
+  context.fillRect(0, 0, canvas.width, grid);
+  context.fillRect(0, canvas.height - grid, canvas.width, canvas.height);
+
+  // Draw middle line
+  for (let i = grid; i < canvas.height - grid; i += grid * 2) {
+    context.fillRect(canvas.width / 2 - grid / 2, i, grid, grid);
+  }
+}
+
+// Keyboard events
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowUp') rightPaddle.dy = -paddleSpeed;
+  if (e.key === 'ArrowDown') rightPaddle.dy = paddleSpeed;
+  if (e.key === 'w') leftPaddle.dy = -paddleSpeed;
+  if (e.key === 's') leftPaddle.dy = paddleSpeed;
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') rightPaddle.dy = 0;
+  if (e.key === 'w' || e.key === 's') leftPaddle.dy = 0;
+});
+
+// Touch events
+let leftTouchY = null;
+let rightTouchY = null;
+
+canvas.addEventListener('touchstart', (event) => {
+  const rect = canvas.getBoundingClientRect();
+  Array.from(event.touches).forEach((touch) => {
+    const touchX = touch.clientX - rect.left;
+    const touchY = touch.clientY - rect.top;
+    if (touchX < canvas.width / 2) leftTouchY = touchY;
+    if (touchX >= canvas.width / 2) rightTouchY = touchY;
+  });
+});
+
+canvas.addEventListener('touchmove', (event) => {
+  const rect = canvas.getBoundingClientRect();
+  Array.from(event.touches).forEach((touch) => {
+    const touchX = touch.clientX - rect.left;
+    const touchY = touch.clientY - rect.top;
+    if (touchX < canvas.width / 2) leftPaddle.y = touchY - paddleHeight / 2;
+    if (touchX >= canvas.width / 2) rightPaddle.y = touchY - paddleHeight / 2;
+  });
+});
+
+canvas.addEventListener('touchend', (event) => {
+  leftTouchY = null;
+  rightTouchY = null;
+});
+
+// Start game loop
+loop();
+</script>
+</body>
+</html>
