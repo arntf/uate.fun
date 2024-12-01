@@ -1,0 +1,6 @@
+// 12/1/2024
+// Author: arntf
+// Attributor: https://gist.github.com/straker/81b59eecf70da93af396f963596dfdc5
+// Base on the attributor,
+// ARNTF used Gemini gave a solution as .game-container to fit the game to any screen on any devices, and copilot give me a full script of adding the touches controls of two paddles, and remove the default scrolling feature when you touch the screen. 
+// Further plan: add score board, limit the times of challenges, donation option, continue to play.
